@@ -687,7 +687,10 @@ reload the test tabs (see 5.4 on old tabs).
   - 128×128 icon (`icons/icon-128.png`, 96×96 artwork with 16 px transparent
     padding, as Google recommends).
 - Icon: a white eyedropper (the color-picker tool) dropping a color, on a
-  rounded square with a purple → pink → orange gradient. Re-export after
+  rounded square with a purple → pink → orange gradient. The design is
+  also in Penpot (page "Google Icon 128", one board per size with PNG
+  export set). The SVG's viewBox is trimmed to the rounded square, so the
+  square fills 96×96 exactly in the 128 icon and the full canvas at 16/32/48. Re-export after
   editing the SVG:
   `for n in 16 32 48; do rsvg-convert -w $n -h $n icons/source/icon.svg -o icons/icon-$n.png; done`
   and `rsvg-convert -w 96 -h 96 icons/source/icon.svg | magick - -background none -gravity center -extent 128x128 icons/icon-128.png`.
