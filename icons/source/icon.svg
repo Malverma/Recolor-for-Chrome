@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5b3cc4"/>
+      <stop offset="0.55" stop-color="#c84b9e"/>
+      <stop offset="1" stop-color="#ff8a4c"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bg)"/>
+  <!-- Eyedropper, drawn upright then turned 45° so the tip points down-left. -->
+  <g transform="translate(6 -6) rotate(45 64 64)" fill="#fff">
+    <rect x="52" y="14" width="24" height="30" rx="12"/>
+    <rect x="42" y="42" width="44" height="11" rx="5.5"/>
+    <path d="M54.5 53 H73.5 V88 L67 102 Q64 107 61 102 L54.5 88 Z"/>
+  </g>
+  <!-- The picked color: a drop falling from the tip. -->
+  <path d="M29 92 C29 92 20 103 20 108.5 A9 9 0 0 0 38 108.5 C38 103 29 92 29 92 Z" fill="#fff"/>
+</svg>

@@ -159,7 +159,8 @@ Recolor-for-Chrome/
 │   ├── icon-16.png
 │   ├── icon-32.png
 │   ├── icon-48.png
-│   └── icon-128.png
+│   ├── icon-128.png
+│   └── source/icon.svg    (master artwork, not packaged)
 ├── LICENSE
 └── spec.md                (not packaged)
 ```
@@ -176,7 +177,7 @@ How each file relates to the Firefox repo:
 | `content.js`                 | Rewritten to use `chrome.*` and the stored default (5.4).        |
 | `background.js`              | Rewritten as a service worker that seeds the default (5.3).      |
 | `manifest.json`              | Rewritten for Chrome (5.2).                                      |
-| `icons/`                     | 48 px reused. New 16, 32, and 128 px sizes from the same artwork. |
+| `icons/`                     | New eyedropper icon, exported from `icons/source/icon.svg`.      |
 | `newtab/`                    | New (5.10).                                                      |
 | `.amo-upload-uuid`           | Dropped (Firefox Add-ons only).                                  |
 
@@ -679,12 +680,17 @@ reload the test tabs (see 5.4 on old tabs).
 
 - Build: zip the extension files from the repo root, leaving out `spec.md`,
   `.git*`, and any build output:
-  `zip -r recolor-for-chrome-2.1.0.zip . -x 'spec.md' '.git*' '*.zip'`.
+  `zip -r recolor-for-chrome-2.1.0.zip . -x 'spec.md' '.git*' '*.zip' 'icons/source/*'`.
 - Publish through the Chrome Web Store Developer Dashboard (one-time $5
   developer registration).
 - Store listing assets:
-  - 128×128 icon (`icons/icon-128.png`, artwork about 96×96 with transparent
+  - 128×128 icon (`icons/icon-128.png`, 96×96 artwork with 16 px transparent
     padding, as Google recommends).
+- Icon: a white eyedropper (the color-picker tool) dropping a color, on a
+  rounded square with a purple → pink → orange gradient. Re-export after
+  editing the SVG:
+  `for n in 16 32 48; do rsvg-convert -w $n -h $n icons/source/icon.svg -o icons/icon-$n.png; done`
+  and `rsvg-convert -w 96 -h 96 icons/source/icon.svg | magick - -background none -gravity center -extent 128x128 icons/icon-128.png`.
   - At least one screenshot at 1280×800 or 640×400 (e.g. YouTube Music, a
     light site forced dark, the upload page).
   - Small promo tile, 440×280.
