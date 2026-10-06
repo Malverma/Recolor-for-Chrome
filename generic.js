@@ -3,8 +3,9 @@
 // Finds the page's base background color, then marks every element painted
 // in the same color as what's behind it with [data-fr-clear] so
 // css/generic.css can make it transparent. Opaque headers, sidebars and
-// columns in other colors become translucent panels [data-fr-panel], flipped
-// [data-fr-flip] when they would otherwise end up light. Popups and anything
+// columns in other colors, and neutral gray/white/black cards, become
+// translucent panels [data-fr-panel], flipped [data-fr-flip] when they would
+// otherwise end up light. Popups and anything
 // with its own background image are left alone. Light pages are also marked
 // [data-fr-invert] to force them dark.
 (() => {
@@ -68,6 +69,8 @@
 
   const distance = (a, b) => Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
   const isLight = ({ r, g, b }) => 0.2126 * r + 0.7152 * g + 0.0722 * b > 128;
+  // Gray, white or black: a surface color rather than a brand/accent color.
+  const isNeutral = ({ r, g, b }) => Math.max(r, g, b) - Math.min(r, g, b) < 24;
   const POPUP_ROLES = /^(dialog|alertdialog|menu|listbox|tooltip)$/;
 
   // What each element was classified as, so later passes don't re-read
@@ -107,12 +110,21 @@
       return { kind: "clear", color, overlay };
     }
 
+    // Cards, info rows, list items in a neutral color of their own (e.g. the
+    // facts rows in Google's knowledge panel): treated like panels so the
+    // wallpaper tints through. Colored boxes (buttons, badges, alerts) and
+    // popups keep their look.
+    const card =
+      !overlay && !pinned && isNeutral(color) && rect.width >= 120 && rect.height >= 32;
+
     // Headers, sidebars, columns, app shells in their own color: translucent
     // panel. Flip it if it would end up light: a light panel on a page that
     // isn't inverted, or a dark one on a page that is.
-    if (sized && !ctx.overlay) {
+    if ((sized || card) && !ctx.overlay) {
       const endsLight = isLight(color) !== (pageInverted !== ctx.flipped);
-      return { kind: "panel", color, overlay, flip: endsLight && !ctx.flipped };
+      // Cards sit over smaller areas, so they can be more see-through.
+      const alpha = sized ? 0.6 : 0.35;
+      return { kind: "panel", color, overlay, alpha, flip: endsLight && !ctx.flipped };
     }
 
     // Anything else keeps its look.
@@ -136,7 +148,7 @@
       el.setAttribute("data-fr-clear", "");
     } else if (result.kind === "panel") {
       const { r, g, b } = result.color;
-      el.style.setProperty("--fr-panel", `rgba(${r}, ${g}, ${b}, 0.6)`);
+      el.style.setProperty("--fr-panel", `rgba(${r}, ${g}, ${b}, ${result.alpha})`);
       el.setAttribute("data-fr-panel", "");
       if (result.flip) el.setAttribute("data-fr-flip", "");
     }

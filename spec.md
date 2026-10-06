@@ -2,7 +2,7 @@
 
 Repository: <https://github.com/Malverma/Recolor-for-Chrome>
 
-Version 2.1.0. Ported from **Recolor for Firefox** v2.0.0
+Version 2.2.0. Ported from **Recolor for Firefox** v2.0.0
 (<https://github.com/Malverma/Firefox-Recolor>). This spec covers the Chrome
 version. Behavior is the same as the Firefox version unless this spec says
 otherwise. Section 10 lists every difference in one place.
@@ -169,7 +169,7 @@ How each file relates to the Firefox repo:
 
 | File                         | From Firefox                                                     |
 | ---------------------------- | ---------------------------------------------------------------- |
-| `generic.js`                 | Identical. It uses no extension APIs.                            |
+| `generic.js`                 | Adds the neutral-card rule (5.9); otherwise identical. No extension APIs. |
 | `css/*.css`                  | Identical except the header comment; `generic.css` adds the ad-frame rule (5.9). |
 | `upload/upload.css`          | Identical.                                                       |
 | `upload/upload.html`         | Title and heading text changed.                                  |
@@ -182,7 +182,8 @@ How each file relates to the Firefox repo:
 | `.amo-upload-uuid`           | Dropped (Firefox Add-ons only).                                  |
 
 The `--fr-*` custom properties and `data-fr-*` attributes keep their names,
-so `generic.js` and the CSS stay identical in both repos.
+so `generic.js` and the CSS stay close to the Firefox repo (the Chrome-only
+changes in 5.9 can be ported back).
 
 ### 5.2 Manifest (Manifest V3)
 
@@ -190,7 +191,7 @@ so `generic.js` and the CSS stay identical in both repos.
 {
   "manifest_version": 3,
   "name": "Recolor for Chrome",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Puts a wallpaper of your choice behind every website, forcing light sites into dark mode, with tuned styles for YouTube and YouTube Music.",
   "homepage_url": "https://github.com/Malverma/Recolor-for-Chrome",
   "minimum_chrome_version": "120",
@@ -483,7 +484,15 @@ The files and behavior are **identical to Firefox** (see the Firefox spec
   opaque background as **clear** (same color as what's behind it, not
   pinned, not in an overlay), **panel** (layout-sized; its own color at 0.6
   alpha + blur 12px), **flip** (a panel that would end up light, inverted on
-  its own), or **solid** (left alone). All reads happen before any writes,
+  its own), or **solid** (left alone).
+- **Neutral cards (Chrome version only):** an element with a neutral
+  (gray/white/black: channel spread < 24) background of its own that is at
+  least 120×32 px, not `absolute`/`fixed`/`sticky`, and not in an overlay is
+  also treated as a panel, but at **0.35** alpha (layout-sized panels stay at
+  0.6) with the same 12px blur and flip rule. Example: the facts rows (CEO,
+  Owners, Founders…) in Google's knowledge panel were solid gray boxes; they
+  now show the wallpaper's colors through a light tint. Colored boxes
+  (buttons, badges, alerts) and popups keep their look. All reads happen before any writes,
   and each element's result is cached in a `WeakMap`.
 - **Updates**: a `MutationObserver` on `body` (childList plus `class`,
   `style`, `hidden`, `open`), batched every 300 ms. `resize` re-processes
@@ -530,7 +539,9 @@ it is; the extension never touches a frame's content. Verified on
 speedtest.net.
 
 **Known limits**: the same as Firefox §5.9, plus the Chrome checks above.
-Ads whose creative fills the slot with its own background still look solid.
+"Read more" masks (an absolutely positioned fade + "Show more" bar over
+truncated text, e.g. in Google's knowledge panel) stay opaque, since
+clearing them would show the cut-off text underneath. Ads whose creative fills the slot with its own background still look solid.
 
 ### 5.10 New Tab page (`newtab/newtab.html`, `newtab.css`, `newtab.js`)
 
@@ -635,6 +646,8 @@ reload the test tabs (see 5.4 on old tabs).
 15. Open a direct image URL and a `.txt` file URL. They are unchanged.
 16. A page with an embedded YouTube video: the embed itself is unchanged.
 17. chrome://settings and chromewebstore.google.com are unchanged.
+16a. Google search for a company (e.g. "youtube"): the knowledge panel's
+    facts rows are translucent and tinted by the wallpaper; text is readable.
 17a. A dark site with display ads (e.g. speedtest.net): no white boxes
     around or behind ads; the ads themselves look normal.
 
@@ -680,7 +693,7 @@ reload the test tabs (see 5.4 on old tabs).
 
 - Build: zip the extension files from the repo root, leaving out `spec.md`,
   `.git*`, and any build output:
-  `zip -r recolor-for-chrome-2.1.0.zip . -x 'spec.md' '.git*' '*.zip' 'icons/source/*'`.
+  `zip -r recolor-for-chrome-2.2.0.zip . -x 'spec.md' '.git*' '*.zip' 'icons/source/*' 'issue*.png'`.
 - Publish through the Chrome Web Store Developer Dashboard (one-time $5
   developer registration).
 - Store listing assets:
@@ -752,4 +765,5 @@ Same as the Firefox version, plus Chrome-specific ones:
 | Dev loading               | `about:debugging` temporary add-on (storage lost on unload) | chrome://extensions → Load unpacked (storage kept)          |
 | Build                     | `web-ext build`                                      | `zip` (Section 8)                                                 |
 | Distribution              | AMO (signing required)                               | Chrome Web Store                                                  |
-| Unchanged                 | `generic.js`, site CSS, upload page layout and flow  | Same                                                              |
+| Small neutral boxes       | Stay solid                                           | Translucent "cards" at 0.35 alpha + blur (5.9)                    |
+| Unchanged                 | Site CSS, upload page layout and flow                | Same                                                              |
