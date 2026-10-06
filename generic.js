@@ -73,6 +73,7 @@
   const isNeutral = ({ r, g, b }) => Math.max(r, g, b) - Math.min(r, g, b) < 24;
   const POPUP_ROLES = /^(dialog|alertdialog|menu|listbox|tooltip)$/;
   const TRANSPARENT = 0.05;
+  const CARD_ALPHA = 0.25;
 
   // A "read more" fade: a gradient from transparent to the color behind it,
   // laid over truncated text (e.g. Google's knowledge panel description).
@@ -87,20 +88,49 @@
     );
   }
 
-  // Whether el sits next to a fade, within a few levels: the opaque bar that
-  // carries a "Show more" button below the fade.
-  function besideFade(el, behind) {
+  // The fade el sits next to, within a few levels, if any: el is then the
+  // opaque bar that carries a "Show more" button below the fade.
+  function fadeBeside(el, behind) {
     for (let p = el.parentElement, i = 0; p && i < 4; p = p.parentElement, i++) {
       for (const sibling of p.children) {
-        if (!sibling.contains(el) && isFade(sibling, behind)) return true;
+        if (!sibling.contains(el) && isFade(sibling, behind)) return sibling;
       }
     }
-    return false;
+    return null;
+  }
+
+  // The corner radius of a rounded child that fills el (e.g. a pill-shaped
+  // "Show more" button on a square bar), so el's tint can follow its shape.
+  function fillingRadius(el, rect) {
+    let level = [...el.children];
+    for (let depth = 0; depth < 3 && level.length; depth++) {
+      for (const child of level) {
+        const r = child.getBoundingClientRect();
+        if (Math.abs(r.width - rect.width) > 4 || Math.abs(r.height - rect.height) > 4) continue;
+        const radius = parseFloat(getComputedStyle(child).borderRadius);
+        if (radius > 0) return `${Math.min(radius, rect.width / 2, rect.height / 2)}px`;
+      }
+      level = level.flatMap((child) => [...child.children]);
+    }
+    return null;
   }
 
   // What each element was classified as, so later passes don't re-read
   // backgrounds the extension itself has already changed.
   const classified = new WeakMap();
+
+  // Fades whose content is masked. The mask only applies while the fade is
+  // showing ([data-fr-fade-on] on its parent), so expanded text ("Show
+  // more" clicked) is never hidden. Re-checked after every batch of changes.
+  const fades = new Set();
+
+  function updateFade(fade) {
+    if (!fade.isConnected) {
+      fades.delete(fade);
+      return;
+    }
+    fade.parentElement.toggleAttribute("data-fr-fade-on", fade.getClientRects().length > 0);
+  }
 
   // Read-only: decide what to do with el, given the context it sits in.
   //   ctx.behind  – color painted behind el (page base, or nearest opaque ancestor)
@@ -125,21 +155,34 @@
       const c = toRgba(cs.backgroundColor);
       if (c.a >= 0.9) color = c;
     } else if (!ctx.overlay && isFade(el, ctx.behind)) {
-      // Fades become a blur that fades in, so the cut-off text is frosted
-      // instead of covered in the page color.
-      return { kind: "fade", overlay };
+      // Instead of fading the cut-off text into the page color, fade the
+      // text itself out to transparent: mask each in-flow sibling (the
+      // content under the fade) from the fade's top to ~55% of the way down,
+      // where the original gradient is nearly opaque.
+      const fadeRect = rect;
+      const contents = [];
+      for (const sibling of el.parentElement.children) {
+        if (sibling === el) continue;
+        const position = getComputedStyle(sibling).position;
+        if (position === "absolute" || position === "fixed") continue;
+        const top = sibling.getBoundingClientRect().top;
+        const start = Math.max(0, Math.round(fadeRect.top - top));
+        contents.push({ el: sibling, start, end: start + Math.round(fadeRect.height * 0.55) });
+      }
+      return { kind: "fade", overlay, contents };
     }
     if (!color) return { kind: "none", overlay };
 
-    // The bar under a fade: same frosted tint as a card. Real popups never
-    // sit beside a fade, so they stay opaque.
-    if (
+    // The bar under a fade: same tint as a card, rounded like the button on
+    // it. Real popups never sit beside a fade, so they stay opaque.
+    const fade =
       ctx.overlay &&
       !POPUP_ROLES.test(el.getAttribute("role") || "") &&
       distance(color, ctx.behind) < COLOR_DISTANCE &&
-      besideFade(el, ctx.behind)
-    ) {
-      return { kind: "panel", color, overlay, alpha: 0.35, flip: false };
+      fadeBeside(el, ctx.behind);
+    if (fade) {
+      const radius = fillingRadius(el, rect);
+      return { kind: "panel", color, overlay, alpha: CARD_ALPHA, flip: false, radius };
     }
 
     // Same color as what's behind it (result boxes, cards, wrappers on the
@@ -163,7 +206,7 @@
     if ((sized || card) && !ctx.overlay) {
       const endsLight = isLight(color) !== (pageInverted !== ctx.flipped);
       // Cards sit over smaller areas, so they can be more see-through.
-      const alpha = sized ? 0.6 : 0.35;
+      const alpha = sized ? 0.6 : CARD_ALPHA;
       return { kind: "panel", color, overlay, alpha, flip: endsLight && !ctx.flipped };
     }
 
@@ -188,10 +231,18 @@
       el.setAttribute("data-fr-clear", "");
     } else if (result.kind === "fade") {
       el.setAttribute("data-fr-fade", "");
+      for (const { el: content, start, end } of result.contents) {
+        content.style.setProperty("--fr-mask-start", `${start}px`);
+        content.style.setProperty("--fr-mask-end", `${end}px`);
+        content.setAttribute("data-fr-fade-content", "");
+      }
+      fades.add(el);
+      updateFade(el);
     } else if (result.kind === "panel") {
       const { r, g, b } = result.color;
       el.style.setProperty("--fr-panel", `rgba(${r}, ${g}, ${b}, ${result.alpha})`);
       el.setAttribute("data-fr-panel", "");
+      if (result.radius) el.style.setProperty("border-radius", result.radius, "important");
       if (result.flip) el.setAttribute("data-fr-flip", "");
     }
   }
@@ -253,6 +304,7 @@
       const ctx = el === document.body ? rootCtx : contextFor(el);
       if (ctx) processTree(el, ctx);
     }
+    for (const fade of fades) updateFade(fade);
   }
 
   function markDirty(el) {

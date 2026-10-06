@@ -2,7 +2,7 @@
 
 Repository: <https://github.com/Malverma/Recolor-for-Chrome>
 
-Version 2.2.1. Ported from **Recolor for Firefox** v2.0.0
+Version 2.2.2. Ported from **Recolor for Firefox** v2.0.0
 (<https://github.com/Malverma/Firefox-Recolor>). This spec covers the Chrome
 version. Behavior is the same as the Firefox version unless this spec says
 otherwise. Section 10 lists every difference in one place.
@@ -191,7 +191,7 @@ changes in 5.9 can be ported back).
 {
   "manifest_version": 3,
   "name": "Recolor for Chrome",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Puts a wallpaper of your choice behind every website, forcing light sites into dark mode, with tuned styles for YouTube and YouTube Music.",
   "homepage_url": "https://github.com/Malverma/Recolor-for-Chrome",
   "minimum_chrome_version": "120",
@@ -488,7 +488,7 @@ The files and behavior are **identical to Firefox** (see the Firefox spec
 - **Neutral cards (Chrome version only):** an element with a neutral
   (gray/white/black: channel spread < 24) background of its own that is at
   least 120×32 px, not `absolute`/`fixed`/`sticky`, and not in an overlay is
-  also treated as a panel, but at **0.35** alpha (layout-sized panels stay at
+  also treated as a panel, but at **0.25** alpha (layout-sized panels stay at
   0.6) with the same 12px blur and flip rule. Example: the facts rows (CEO,
   Owners, Founders…) in Google's knowledge panel were solid gray boxes; they
   now show the wallpaper's colors through a light tint. Colored boxes
@@ -496,12 +496,21 @@ The files and behavior are **identical to Firefox** (see the Firefox spec
 - **"Read more" fades (Chrome version only):** an element whose
   `background-image` is only a `linear-gradient` with stops that are
   transparent or the color behind it (a fade over truncated text) gets
-  `[data-fr-fade]`: gradient removed, `backdrop-filter: blur(12px)` masked
-  with `linear-gradient(transparent, #000 60%)`, so the cut-off text is
-  frosted rather than covered in a dark band. A box in the color behind it
-  that sits inside an overlay **and** next to such a fade (within 4 levels;
-  the bar carrying "Show more") becomes a 0.35-alpha card. Real popups never
-  sit beside a fade, so menus and dropdowns stay opaque. All reads happen before any writes,
+  `[data-fr-fade]` and its gradient is removed. Instead, each in-flow sibling
+  under it (the truncated content) gets `[data-fr-fade-content]` and a
+  `mask-image` from the fade's top (`--fr-mask-start`) to 55% of the fade's
+  height (`--fr-mask-end`), so the text fades out to transparent and the
+  wallpaper shows rather than a dark band. The mask only applies while the
+  fade is rendered (`[data-fr-fade-on]` on its parent, re-checked after every
+  mutation batch), so text expanded with "Show more" is never hidden. No
+  blur is used here: `clip-path`/`mask` on an ancestor makes Chrome stop
+  `backdrop-filter` from seeing the content behind it.
+- **The bar beside a fade:** a box in the color behind it, inside an
+  overlay **and** next to such a fade (within 4 levels; the bar carrying
+  "Show more"), becomes a card. If a rounded child fills it (the pill
+  button), the bar gets that child's `border-radius` (clamped to half its
+  height), so the tint matches the button's shape instead of a square. Real
+  popups never sit beside a fade, so menus and dropdowns stay opaque. All reads happen before any writes,
   and each element's result is cached in a `WeakMap`.
 - **Updates**: a `MutationObserver` on `body` (childList plus `class`,
   `style`, `hidden`, `open`), batched every 300 ms. `resize` re-processes
@@ -655,8 +664,9 @@ reload the test tabs (see 5.4 on old tabs).
 17. chrome://settings and chromewebstore.google.com are unchanged.
 16a. Google search for a company (e.g. "youtube"): the knowledge panel's
     facts rows are translucent and tinted by the wallpaper; text is readable.
-    The "Show more" area is frosted and tinted, not a black band, and the
-    cut-off description text under it isn't readable.
+    The description fades out into the wallpaper (no black band), the "Show
+    more" pill's tint is rounded like its border (no square), and no cut-off
+    text peeks out under it. Clicking "Show more" shows the full text.
 17a. A dark site with display ads (e.g. speedtest.net): no white boxes
     around or behind ads; the ads themselves look normal.
 
@@ -702,7 +712,7 @@ reload the test tabs (see 5.4 on old tabs).
 
 - Build: zip the extension files from the repo root, leaving out `spec.md`,
   `.git*`, and any build output:
-  `zip -r recolor-for-chrome-2.2.1.zip . -x 'spec.md' '.git*' '*.zip' 'icons/source/*' 'issue*.png'`.
+  `zip -r recolor-for-chrome-2.2.2.zip . -x 'spec.md' '.git*' '*.zip' 'icons/source/*' 'issue*.png'`.
 - Publish through the Chrome Web Store Developer Dashboard (one-time $5
   developer registration).
 - Store listing assets:
@@ -774,5 +784,5 @@ Same as the Firefox version, plus Chrome-specific ones:
 | Dev loading               | `about:debugging` temporary add-on (storage lost on unload) | chrome://extensions → Load unpacked (storage kept)          |
 | Build                     | `web-ext build`                                      | `zip` (Section 8)                                                 |
 | Distribution              | AMO (signing required)                               | Chrome Web Store                                                  |
-| Small neutral boxes       | Stay solid                                           | Translucent "cards" at 0.35 alpha + blur (5.9)                    |
+| Small neutral boxes       | Stay solid                                           | Translucent "cards" at 0.25 alpha + blur (5.9)                    |
 | Unchanged                 | Site CSS, upload page layout and flow                | Same                                                              |

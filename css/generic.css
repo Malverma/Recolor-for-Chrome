@@ -20,14 +20,17 @@ html[data-fr] [data-fr-clear] {
   background-color: transparent !important;
 }
 
-/* "Read more" fades (gradient to the page color over truncated text): a
-   blur that fades in instead, so the cut-off text is frosted rather than
-   covered in the page color. Set by generic.js. */
+/* "Read more" fades (gradient to the page color over truncated text): the
+   gradient is dropped and the text under it fades out to transparent
+   instead, so the wallpaper shows rather than a dark band. Only while the
+   fade is showing ([data-fr-fade-on]); set by generic.js. */
 html[data-fr] [data-fr-fade] {
   background-image: none !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-mask-image: linear-gradient(transparent, #000 60%) !important;
-  mask-image: linear-gradient(transparent, #000 60%) !important;
+}
+
+html[data-fr] [data-fr-fade-on] > [data-fr-fade-content] {
+  -webkit-mask-image: linear-gradient(#000 var(--fr-mask-start), transparent var(--fr-mask-end)) !important;
+  mask-image: linear-gradient(#000 var(--fr-mask-start), transparent var(--fr-mask-end)) !important;
 }
 
 /* Frames (mostly ads). When an iframe's color-scheme differs from its
