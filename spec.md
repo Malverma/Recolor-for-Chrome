@@ -2,7 +2,7 @@
 
 Repository: <https://github.com/Malverma/Recolor-for-Chrome>
 
-Ported from **Recolor for Firefox** v2.0.0
+Version 2.1.0. Ported from **Recolor for Firefox** v2.0.0
 (<https://github.com/Malverma/Firefox-Recolor>). This spec covers the Chrome
 version. Behavior is the same as the Firefox version unless this spec says
 otherwise. Section 10 lists every difference in one place.
@@ -32,6 +32,10 @@ instead, because generic mode can't handle their custom theme systems:
 The wallpaper defaults to the bundled `images/background.jpg`. The user can
 open a drag-and-drop upload page from the toolbar and drop in their own image.
 It **replaces** the current wallpaper on every site at once.
+
+Chrome doesn't let extensions run scripts on its own New Tab page, so the
+extension replaces the New Tab page with its own (section 5.10): the
+wallpaper, a clock, and a search box.
 
 The extension is **purely cosmetic**. It changes how sites look and nothing
 else.
@@ -66,11 +70,14 @@ The extension must **not**:
   (text, buttons, icons, thumbnails).
 - Inject any UI (buttons, panels, overlays) into web pages. The upload UI
   lives on its own extension page.
-- Touch iframes (embedded videos, ads, Gmail chat, comment widgets). Only
-  the top-level page is styled.
+- Touch the content of iframes (embedded videos, ads, Gmail chat, comment
+  widgets). Only the top-level page is styled. The `<iframe>` element on the
+  outer page may be styled (section 5.9, "Ad frames") but its document never is.
 - Touch non-HTML documents (images, plain text, PDFs opened directly) or
-  pages Chrome protects (`chrome://`, `chrome-extension://`, the New Tab page,
+  pages Chrome protects (`chrome://`, `chrome-extension://`,
   `chromewebstore.google.com`). Chrome blocks content scripts on these anyway.
+  The New Tab page is replaced instead (section 5.10).
+- Copy Google's New Tab page (shortcuts, Google doodle, cards).
 - Expose any web-accessible resource. Chrome extension IDs are fixed, so a
   web-accessible file would let any site detect the extension (section 4.1).
 - Have per-site wallpapers or per-site on/off switches (v2).
@@ -142,6 +149,10 @@ Recolor-for-Chrome/
 │   ├── upload.html
 │   ├── upload.css
 │   └── upload.js
+├── newtab/                (replacement New Tab page)
+│   ├── newtab.html
+│   ├── newtab.css
+│   └── newtab.js
 ├── images/
 │   └── background.jpg
 ├── icons/
@@ -158,7 +169,7 @@ How each file relates to the Firefox repo:
 | File                         | From Firefox                                                     |
 | ---------------------------- | ---------------------------------------------------------------- |
 | `generic.js`                 | Identical. It uses no extension APIs.                            |
-| `css/*.css`                  | Identical except the header comment ("Recolor for Chrome").      |
+| `css/*.css`                  | Identical except the header comment; `generic.css` adds the ad-frame rule (5.9). |
 | `upload/upload.css`          | Identical.                                                       |
 | `upload/upload.html`         | Title and heading text changed.                                  |
 | `upload/upload.js`           | `browser.*` → `chrome.*`, one comment changed.                   |
@@ -166,6 +177,7 @@ How each file relates to the Firefox repo:
 | `background.js`              | Rewritten as a service worker that seeds the default (5.3).      |
 | `manifest.json`              | Rewritten for Chrome (5.2).                                      |
 | `icons/`                     | 48 px reused. New 16, 32, and 128 px sizes from the same artwork. |
+| `newtab/`                    | New (5.10).                                                      |
 | `.amo-upload-uuid`           | Dropped (Firefox Add-ons only).                                  |
 
 The `--fr-*` custom properties and `data-fr-*` attributes keep their names,
@@ -177,7 +189,7 @@ so `generic.js` and the CSS stay identical in both repos.
 {
   "manifest_version": 3,
   "name": "Recolor for Chrome",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Puts a wallpaper of your choice behind every website, forcing light sites into dark mode, with tuned styles for YouTube and YouTube Music.",
   "homepage_url": "https://github.com/Malverma/Recolor-for-Chrome",
   "minimum_chrome_version": "120",
@@ -187,7 +199,7 @@ so `generic.js` and the CSS stay identical in both repos.
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
-  "permissions": ["storage", "unlimitedStorage"],
+  "permissions": ["storage", "unlimitedStorage", "search"],
   "background": {
     "service_worker": "background.js"
   },
@@ -201,6 +213,9 @@ so `generic.js` and the CSS stay identical in both repos.
   "options_ui": {
     "page": "upload/upload.html",
     "open_in_tab": true
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab/newtab.html"
   },
   "content_scripts": [
     {
@@ -236,8 +251,9 @@ so `generic.js` and the CSS stay identical in both repos.
   declaration) is removed. Chrome warns about unknown keys, and Chrome Web
   Store collects privacy declarations in its dashboard instead (section 8).
 - No `web_accessible_resources` (section 4.1).
-- `storage` and `unlimitedStorage` are the only API permissions. Neither
-  shows an install warning. The content script matches cover all
+- `storage`, `unlimitedStorage` and `search` are the only API permissions.
+  None of them shows an install warning. `search` lets the New Tab page's
+  search box use the user's default search engine. The content script matches cover all
   `http`/`https` sites, so Chrome shows **"Read and change all your data on
   all websites"** at install. No `tabs` or `scripting` permission.
 - Users can limit site access under chrome://extensions → Details → Site
@@ -494,7 +510,52 @@ behaves differently):
   light pages can end up inverted twice (light again). That's a known
   conflict. The extension doesn't try to detect it.
 
+**Ad frames (Chrome version only).** Ad slots are usually transparent
+wrappers around an `<iframe>`. When an iframe's used `color-scheme` differs
+from its document's, the browser paints an opaque backdrop behind the frame
+(white for a light-scheme document). Ad documents use the default light
+scheme, so on dark-scheme pages every unused part of an ad slot showed as a
+solid white box. `generic.css` sets the frame element's scheme to match:
+
+```css
+html[data-fr] iframe {
+  color-scheme: light !important;
+}
+```
+
+The frame then stays transparent wherever the ad doesn't paint. The ad
+creative itself (its image or its own background) is opaque and stays as
+it is; the extension never touches a frame's content. Verified on
+speedtest.net.
+
 **Known limits**: the same as Firefox §5.9, plus the Chrome checks above.
+Ads whose creative fills the slot with its own background still look solid.
+
+### 5.10 New Tab page (`newtab/newtab.html`, `newtab.css`, `newtab.js`)
+
+Chrome blocks content scripts on its New Tab page, so the extension
+overrides it with `chrome_url_overrides.newtab`.
+
+- **Layout:** the wallpaper (same tint and `cover / fixed` setup as
+  `youtube.css`), a large clock, the date, and a pill-shaped search box,
+  centered. A small "Change background" button in the bottom-right corner
+  opens the upload page.
+- **Wallpaper:** `customBackground` from storage, or
+  `chrome.runtime.getURL("images/background.jpg")` (allowed on extension
+  pages). Updates live through `storage.onChanged`.
+- **Search:** `chrome.search.query({ text, disposition: "CURRENT_TAB" })`, so
+  it uses whatever search engine the user has set as default. The search
+  box has `autofocus`, but Chrome normally keeps focus in the address bar
+  on a new tab, which also searches.
+- **No shortcuts or most-visited tiles.** Those need the `topSites`
+  permission, which adds an install warning ("Read a list of your most
+  frequently visited websites"). Left as a future idea.
+- The first time a user opens a new tab after installing, Chrome asks
+  whether to keep the changed New Tab page. Choosing "Change it back"
+  disables the whole extension, so the store listing should mention the
+  New Tab page.
+- Follows the extension-page CSP: no inline scripts or styles, no external
+  resources.
 
 ## 6. Behavior Requirements
 
@@ -508,7 +569,7 @@ behaves differently):
 | R5   | No flash of the default image when a custom image is set. Generic mode never paints a wrong background color (a light page may show white until it has parsed). |
 | R6   | Playback, search, email, controls, and navigation work exactly as without the extension.        |
 | R7   | The extension makes no network requests.                                                        |
-| R8   | Iframes, non-HTML documents, and Chrome-protected pages are never changed.                       |
+| R8   | Iframe contents, non-HTML documents, and Chrome-protected pages are never changed.               |
 | R9   | The toolbar button opens the upload page (or focuses it if already open).                       |
 | R10  | Dropping or choosing a valid image replaces the wallpaper on all open tabs within ~1 s, without a reload. |
 | R11  | Only one custom image is stored; a new upload overwrites the previous one.                       |
@@ -517,6 +578,8 @@ behaves differently):
 | R14  | Disabling the extension fully restores each site's original look (after a reload). Removing it also deletes the stored images. |
 | R15  | Text contrast stays readable (target WCAG AA, 4.5:1, for main body text over tinted surfaces).   |
 | R16  | No extension file is reachable from web pages (no web-accessible resources).                    |
+| R17  | Opening a new tab shows the wallpaper, a clock, and a search box that uses the default search engine. |
+| R18  | On dark pages, empty parts of ad slots show the wallpaper instead of a white box.                |
 
 ## 7. Testing
 
@@ -570,8 +633,19 @@ reload the test tabs (see 5.4 on old tabs).
     Rendering → Frame Rendering Stats.
 15. Open a direct image URL and a `.txt` file URL. They are unchanged.
 16. A page with an embedded YouTube video: the embed itself is unchanged.
-17. chrome://settings, the New Tab page, and chromewebstore.google.com are
-    unchanged.
+17. chrome://settings and chromewebstore.google.com are unchanged.
+17a. A dark site with display ads (e.g. speedtest.net): no white boxes
+    around or behind ads; the ads themselves look normal.
+
+**New Tab page**
+
+17b. Open a new tab. The wallpaper, clock, date, and search box show. Keep
+    the page when Chrome asks.
+17c. Type in the search box and press Enter. The default search engine's
+    results open in the same tab.
+17d. Upload a new image while a New Tab page is open. It switches without
+    a reload.
+17e. "Change background" opens the upload page.
 
 **Upload page**
 
@@ -605,7 +679,7 @@ reload the test tabs (see 5.4 on old tabs).
 
 - Build: zip the extension files from the repo root, leaving out `spec.md`,
   `.git*`, and any build output:
-  `zip -r recolor-for-chrome-2.0.0.zip . -x 'spec.md' '.git*' '*.zip'`.
+  `zip -r recolor-for-chrome-2.1.0.zip . -x 'spec.md' '.git*' '*.zip'`.
 - Publish through the Chrome Web Store Developer Dashboard (one-time $5
   developer registration).
 - Store listing assets:
@@ -619,7 +693,9 @@ reload the test tabs (see 5.4 on old tabs).
     and darkens light pages to match."
   - **Permission justifications:** `storage`: saves the chosen wallpaper
     locally. `unlimitedStorage`: high-resolution wallpapers can be larger
-    than the 10 MB default quota. Host access (content scripts on all
+    than the 10 MB default quota. `search`: the New Tab page's search box
+    sends the typed text to the user's default search engine. New Tab
+    override: shows the wallpaper on new tabs. Host access (content scripts on all
     sites): restyles each page's background. No remote code.
   - **Data usage:** collects no user data. Certify the required data-use
     statements.
@@ -642,6 +718,8 @@ Same as the Firefox version, plus Chrome-specific ones:
 - A toggle to turn forced dark mode off.
 - Paste an image from the clipboard on the upload page.
 - Animated (GIF/WebP) wallpapers.
+- Shortcuts / most-visited tiles on the New Tab page (`topSites`), or a
+  setting to keep Chrome's own New Tab page.
 - Re-style tabs that were already open at install, using the `scripting`
   permission (adds no new warning, since host access is already granted).
 - Share one codebase with Firefox: a `browser`/`chrome` shim and a small
@@ -655,12 +733,14 @@ Same as the Firefox version, plus Chrome-specific ones:
 | API namespace             | `browser.*`                                          | `chrome.*` (promise-based in MV3)                                 |
 | Background                | `background.scripts` (event page)                    | `background.service_worker`                                       |
 | Default image delivery    | Web-accessible `background.jpg` (random per-install UUID) | Seeded into `storage.local` as `defaultBackground`; no web-accessible resources |
-| Permissions               | `storage`                                            | `storage`, `unlimitedStorage` (10 MB default quota)               |
+| Permissions               | `storage`                                            | `storage`, `unlimitedStorage` (10 MB default quota), `search`     |
 | Browser-specific manifest | `browser_specific_settings.gecko` (ID, min 142, data collection) | `minimum_chrome_version: "120"`; privacy set in the store dashboard |
 | Icons                     | 48, 96                                               | 16, 32, 48, 128                                                   |
-| Protected pages           | `about:`, addons.mozilla.org                         | `chrome://`, New Tab page, chromewebstore.google.com              |
+| Protected pages           | `about:`, addons.mozilla.org                         | `chrome://`, chromewebstore.google.com                            |
+| New Tab page              | Not changed                                          | Replaced with a wallpaper page (5.10)                             |
+| Ad frames                 | Not handled                                          | `iframe { color-scheme: light }` removes white backdrops (5.9)    |
 | Options entry points      | about:addons → Preferences                           | Toolbar right-click → Options; chrome://extensions → Details      |
 | Dev loading               | `about:debugging` temporary add-on (storage lost on unload) | chrome://extensions → Load unpacked (storage kept)          |
 | Build                     | `web-ext build`                                      | `zip` (Section 8)                                                 |
 | Distribution              | AMO (signing required)                               | Chrome Web Store                                                  |
-| Unchanged                 | `generic.js`, all CSS, upload page layout and flow   | Same                                                              |
+| Unchanged                 | `generic.js`, site CSS, upload page layout and flow  | Same                                                              |

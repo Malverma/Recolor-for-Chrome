@@ -20,6 +20,15 @@ html[data-fr] [data-fr-clear] {
   background-color: transparent !important;
 }
 
+/* Frames (mostly ads). When an iframe's color-scheme differs from its
+   document's, the browser paints an opaque backdrop (white for light) behind
+   the frame. Ad documents use the default light scheme, so on dark pages the
+   unused parts of an ad slot showed up as a white box. Matching the scheme
+   keeps the frame transparent; the frame's content is never touched. */
+html[data-fr] iframe {
+  color-scheme: light !important;
+}
+
 /* Headers, sidebars and other opaque panels: their own color, translucent
    and blurred. --fr-panel is set per element by generic.js. */
 html[data-fr] [data-fr-panel] {
