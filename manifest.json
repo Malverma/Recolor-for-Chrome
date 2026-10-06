@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Recolor for Chrome",
   "version": "2.2.2",
-  "description": "Puts a wallpaper of your choice behind every website, forcing light sites into dark mode, with tuned styles for YouTube and YouTube Music.",
+  "description": "Puts your chosen wallpaper behind every website and on new tabs, forces light sites dark, with tuned styles for YouTube.",
   "homepage_url": "https://github.com/Malverma/Recolor-for-Chrome",
   "minimum_chrome_version": "120",
   "icons": {
