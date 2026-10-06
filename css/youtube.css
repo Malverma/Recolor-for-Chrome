@@ -1,0 +1,93 @@
+/* Recolor for Chrome: wallpaper behind YouTube. Visual only. */
+
+/* Wallpaper layer (with a dim tint baked in for readability). The image URL
+   is set by content.js; until then only the fallback color shows. */
+html {
+  background-color: #0f0f0f !important;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
+    var(--fr-bg-image, none) !important;
+  background-position: center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+}
+
+/* Light theme: light tint so dark text stays readable. */
+html:not([dark]) {
+  background-color: #fff !important;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.55)),
+    var(--fr-bg-image, none) !important;
+}
+
+/* YouTube page-background theme variables. YouTube sets them on html and on
+   any element with a [dark] attribute, so override in both places.
+   --yt-spec-raised-background / -menu-background / -brand-background-* are
+   left alone on purpose: menus, dialogs and tooltips use them. */
+html,
+html[dark],
+[dark],
+ytd-app {
+  --yt-spec-base-background: transparent !important;
+  --yt-spec-general-background-a: transparent !important;
+  --yt-spec-general-background-b: transparent !important;
+  --yt-spec-general-background-c: transparent !important;
+}
+
+/* Main app surfaces: fully transparent. */
+body,
+ytd-app,
+#content.ytd-app,
+ytd-page-manager,
+ytd-masthead,
+ytd-masthead #background,
+ytd-mini-guide-renderer,
+ytd-guide-renderer,
+#guide-content,
+ytd-browse,
+ytd-two-column-browse-results-renderer,
+ytd-rich-grid-renderer,
+ytd-section-list-renderer,
+ytd-feed-filter-chip-bar-renderer,
+ytd-feed-filter-chip-bar-renderer #chips-wrapper,
+ytd-search,
+ytd-two-column-search-results-renderer,
+ytd-c4-tabbed-header-renderer,
+#tabs-inner-container,
+tp-yt-app-header,
+#header.ytd-browse,
+ytd-watch-flexy,
+ytd-watch-flexy #columns,
+ytd-watch-flexy #primary,
+ytd-watch-flexy #secondary,
+ytd-watch-metadata,
+ytd-shorts,
+#shorts-container {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Readability layers: tinted + blurred. #frosted-glass sits behind the
+   masthead (and the chips bar on Home), so one tint covers both. */
+#frosted-glass {
+  background: rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+tp-yt-app-drawer #contentContainer {
+  background: rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+html:not([dark]) #frosted-glass,
+html:not([dark]) tp-yt-app-drawer #contentContainer {
+  background: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Keep the player area solid black (theater mode included). */
+#player-full-bleed-container,
+#movie_player,
+.html5-video-player {
+  background-color: #000 !important;
+}

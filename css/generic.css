@@ -1,0 +1,75 @@
+/* Recolor for Chrome: wallpaper behind any website. Visual only.
+
+   Nothing here applies until generic.js has measured the page and set
+   [data-fr] on <html>, along with --fr-base (the page's own background
+   color) and --fr-tint (that color, translucent, for readability). */
+
+html[data-fr] {
+  background-color: var(--fr-base) !important;
+  background-image:
+    linear-gradient(var(--fr-tint), var(--fr-tint)),
+    var(--fr-bg-image, none) !important;
+  background-position: center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+}
+
+/* Large layout containers painted in the page's base color. */
+html[data-fr] [data-fr-clear] {
+  background-color: transparent !important;
+}
+
+/* Headers, sidebars and other opaque panels: their own color, translucent
+   and blurred. --fr-panel is set per element by generic.js. */
+html[data-fr] [data-fr-panel] {
+  background-color: var(--fr-panel) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+/* Panels that would end up light (e.g. a white sidebar on a dark page, or a
+   dark header on a light page that gets inverted) are inverted on their own
+   so they come out dark. Media inside is inverted back below. */
+html[data-fr]:not(:has(:fullscreen)) [data-fr-flip] {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
+html[data-fr]:not([data-fr-invert]):not(:has(:fullscreen)) [data-fr-flip]
+  :is(img, video, canvas, iframe, embed, object, [style*="background-image"]):not([style*="background-image"] *) {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
+/* Forced dark mode for light pages.
+
+   The whole page is inverted (hue-rotate keeps colors close to their
+   original hue), then media is inverted back so photos and video look
+   normal (except inside flipped panels, which are already inverted back).
+   The filter sits on <html> because the root element is the one
+   place a filter doesn't break position: fixed. Everything is switched off
+   while something is fullscreen so fullscreen video is never inverted. */
+html[data-fr][data-fr-invert]:not(:has(:fullscreen)) {
+  filter: invert(1) hue-rotate(180deg) !important;
+  background-color: var(--fr-base) !important;
+  background-image: none !important;
+}
+
+/* The wallpaper gets its own fixed layer, inverted back like media. */
+html[data-fr][data-fr-invert]:not(:has(:fullscreen))::before {
+  content: "" !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: -2147483647 !important;
+  pointer-events: none !important;
+  background-image:
+    linear-gradient(var(--fr-tint), var(--fr-tint)),
+    var(--fr-bg-image, none) !important;
+  background-position: center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
+html[data-fr][data-fr-invert]:not(:has(:fullscreen))
+  :is(img, video, canvas, iframe, embed, object, [style*="background-image"]):not([style*="background-image"] *, [data-fr-flip] *) {
+  filter: invert(1) hue-rotate(180deg) !important;
+}

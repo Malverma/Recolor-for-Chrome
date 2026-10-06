@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recolor for Chrome: background</title>
+  <link rel="stylesheet" href="upload.css">
+</head>
+<body>
+  <main>
+    <h1>Recolor for Chrome: background</h1>
+
+    <section>
+      <h2>Current background</h2>
+      <div class="preview"><img id="preview" alt="Current background"></div>
+      <p id="label" class="label"></p>
+    </section>
+
+    <section>
+      <div id="dropzone" class="dropzone" role="button" tabindex="0">
+        <p><strong>Drop an image here</strong> or click to choose a file</p>
+        <p class="hint">PNG, JPEG or WebP, up to 20 MB. Replaces the current background.</p>
+      </div>
+      <input id="file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+  <script src="upload.js"></script>
+</body>
+</html>

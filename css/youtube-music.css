@@ -1,0 +1,100 @@
+/* Recolor for Chrome: wallpaper behind YouTube Music. Visual only. */
+
+/* Wallpaper layer (with a dim tint baked in for readability). */
+html {
+  background-color: #000 !important;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
+    var(--fr-bg-image, none) !important;
+  background-position: center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+}
+
+/* YouTube Music background theme variables. */
+:root,
+html,
+body,
+ytmusic-app {
+  --ytmusic-background: transparent !important;
+  --ytmusic-general-background-a: transparent !important;
+  --ytmusic-general-background-b: transparent !important;
+  --ytmusic-general-background-c: transparent !important;
+}
+
+/* Some components use --ytmusic-background as a foreground or popup color.
+   Give those back the original solid color. (--ytmusic-brand-background-*
+   is left alone on purpose: menus, dialogs and toasts use it.) */
+ytmusic-guide-entry-renderer:not([is-primary]):not([play-button-state=loading]):not([play-button-state=playing]) #play-button {
+  --iron-icon-fill-color: var(--yt-sys-color-baseline--base-background, #030303) !important;
+  --ytmusic-play-button-guide-icon-color: var(--yt-sys-color-baseline--base-background, #030303) !important;
+}
+
+ytmusic-search-box {
+  --ytmusic-search-background: var(--yt-sys-color-baseline--base-background, #030303) !important;
+}
+
+/* Main app surfaces: fully transparent. */
+body,
+ytmusic-app,
+ytmusic-app-layout,
+ytmusic-app-layout #layout,
+ytmusic-app-layout #content,
+ytmusic-browse-response,
+ytmusic-browse-response #contents,
+ytmusic-section-list-renderer,
+ytmusic-search-page,
+ytmusic-tabbed-search-results-renderer,
+ytmusic-tabs,
+ytmusic-tabs.stuck,
+ytmusic-chip-cloud-renderer,
+ytmusic-immersive-header-renderer,
+ytmusic-detail-header-renderer,
+ytmusic-responsive-header-renderer,
+ytmusic-player-page,
+ytmusic-player-page #main-panel,
+ytmusic-player-page #side-panel,
+ytmusic-player-page tp-yt-paper-tabs,
+ytmusic-tab-renderer,
+ytmusic-nav-bar,
+#nav-bar-divider {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Page-supplied background art (e.g. Home mood art). This div is empty. */
+ytmusic-browse-response #background.immersive-background {
+  display: none !important;
+}
+
+/* Gradient layers. In ytmusic-browse-response this element wraps the whole
+   page content, so it must stay visible: strip its background only. */
+.background-gradient {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* Readability layers: tinted + blurred.
+
+   #nav-bar-background, #mini-guide-background and #player-bar-background
+   live inside ytmusic-app-layout's shadow root, so selectors can't reach
+   them. They are colored through inherited custom properties instead. */
+ytmusic-app-layout {
+  /* Top bar + collapsed side guide, shown once content is scrolled. */
+  --ytmusic-nav-bar: rgba(0, 0, 0, 0.45) !important;
+  /* The solid layer painted behind the bottom player bar. */
+  --ytmusic-player-bar-background: transparent !important;
+}
+
+ytmusic-player-bar {
+  --ytmusic-player-bar-background: rgba(0, 0, 0, 0.55) !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+#guide-wrapper {
+  background: rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: blur(8px) !important;
+  border-right-color: transparent !important;
+}
