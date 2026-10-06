@@ -20,6 +20,16 @@ html[data-fr] [data-fr-clear] {
   background-color: transparent !important;
 }
 
+/* "Read more" fades (gradient to the page color over truncated text): a
+   blur that fades in instead, so the cut-off text is frosted rather than
+   covered in the page color. Set by generic.js. */
+html[data-fr] [data-fr-fade] {
+  background-image: none !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-mask-image: linear-gradient(transparent, #000 60%) !important;
+  mask-image: linear-gradient(transparent, #000 60%) !important;
+}
+
 /* Frames (mostly ads). When an iframe's color-scheme differs from its
    document's, the browser paints an opaque backdrop (white for light) behind
    the frame. Ad documents use the default light scheme, so on dark pages the

@@ -72,6 +72,31 @@
   // Gray, white or black: a surface color rather than a brand/accent color.
   const isNeutral = ({ r, g, b }) => Math.max(r, g, b) - Math.min(r, g, b) < 24;
   const POPUP_ROLES = /^(dialog|alertdialog|menu|listbox|tooltip)$/;
+  const TRANSPARENT = 0.05;
+
+  // A "read more" fade: a gradient from transparent to the color behind it,
+  // laid over truncated text (e.g. Google's knowledge panel description).
+  function isFade(el, behind) {
+    const image = getComputedStyle(el).backgroundImage;
+    if (!image.startsWith("linear-gradient(") || image.includes("url(")) return false;
+    const stops = (image.match(/rgba?\([^)]*\)/g) || []).map(toRgba);
+    return (
+      stops.length >= 2 &&
+      stops.some((c) => c.a < TRANSPARENT) &&
+      stops.every((c) => c.a < TRANSPARENT || distance(c, behind) < COLOR_DISTANCE)
+    );
+  }
+
+  // Whether el sits next to a fade, within a few levels: the opaque bar that
+  // carries a "Show more" button below the fade.
+  function besideFade(el, behind) {
+    for (let p = el.parentElement, i = 0; p && i < 4; p = p.parentElement, i++) {
+      for (const sibling of p.children) {
+        if (!sibling.contains(el) && isFade(sibling, behind)) return true;
+      }
+    }
+    return false;
+  }
 
   // What each element was classified as, so later passes don't re-read
   // backgrounds the extension itself has already changed.
@@ -99,8 +124,23 @@
     if (cs.backgroundImage === "none") {
       const c = toRgba(cs.backgroundColor);
       if (c.a >= 0.9) color = c;
+    } else if (!ctx.overlay && isFade(el, ctx.behind)) {
+      // Fades become a blur that fades in, so the cut-off text is frosted
+      // instead of covered in the page color.
+      return { kind: "fade", overlay };
     }
     if (!color) return { kind: "none", overlay };
+
+    // The bar under a fade: same frosted tint as a card. Real popups never
+    // sit beside a fade, so they stay opaque.
+    if (
+      ctx.overlay &&
+      !POPUP_ROLES.test(el.getAttribute("role") || "") &&
+      distance(color, ctx.behind) < COLOR_DISTANCE &&
+      besideFade(el, ctx.behind)
+    ) {
+      return { kind: "panel", color, overlay, alpha: 0.35, flip: false };
+    }
 
     // Same color as what's behind it (result boxes, cards, wrappers on the
     // page or on a panel): clearing it looks the same, and lets the
@@ -146,6 +186,8 @@
   function apply(el, result) {
     if (result.kind === "clear") {
       el.setAttribute("data-fr-clear", "");
+    } else if (result.kind === "fade") {
+      el.setAttribute("data-fr-fade", "");
     } else if (result.kind === "panel") {
       const { r, g, b } = result.color;
       el.style.setProperty("--fr-panel", `rgba(${r}, ${g}, ${b}, ${result.alpha})`);

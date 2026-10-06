@@ -2,7 +2,7 @@
 
 Repository: <https://github.com/Malverma/Recolor-for-Chrome>
 
-Version 2.2.0. Ported from **Recolor for Firefox** v2.0.0
+Version 2.2.1. Ported from **Recolor for Firefox** v2.0.0
 (<https://github.com/Malverma/Firefox-Recolor>). This spec covers the Chrome
 version. Behavior is the same as the Firefox version unless this spec says
 otherwise. Section 10 lists every difference in one place.
@@ -191,7 +191,7 @@ changes in 5.9 can be ported back).
 {
   "manifest_version": 3,
   "name": "Recolor for Chrome",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Puts a wallpaper of your choice behind every website, forcing light sites into dark mode, with tuned styles for YouTube and YouTube Music.",
   "homepage_url": "https://github.com/Malverma/Recolor-for-Chrome",
   "minimum_chrome_version": "120",
@@ -492,7 +492,16 @@ The files and behavior are **identical to Firefox** (see the Firefox spec
   0.6) with the same 12px blur and flip rule. Example: the facts rows (CEO,
   Owners, Founders…) in Google's knowledge panel were solid gray boxes; they
   now show the wallpaper's colors through a light tint. Colored boxes
-  (buttons, badges, alerts) and popups keep their look. All reads happen before any writes,
+  (buttons, badges, alerts) and popups keep their look.
+- **"Read more" fades (Chrome version only):** an element whose
+  `background-image` is only a `linear-gradient` with stops that are
+  transparent or the color behind it (a fade over truncated text) gets
+  `[data-fr-fade]`: gradient removed, `backdrop-filter: blur(12px)` masked
+  with `linear-gradient(transparent, #000 60%)`, so the cut-off text is
+  frosted rather than covered in a dark band. A box in the color behind it
+  that sits inside an overlay **and** next to such a fade (within 4 levels;
+  the bar carrying "Show more") becomes a 0.35-alpha card. Real popups never
+  sit beside a fade, so menus and dropdowns stay opaque. All reads happen before any writes,
   and each element's result is cached in a `WeakMap`.
 - **Updates**: a `MutationObserver` on `body` (childList plus `class`,
   `style`, `hidden`, `open`), batched every 300 ms. `resize` re-processes
@@ -539,9 +548,7 @@ it is; the extension never touches a frame's content. Verified on
 speedtest.net.
 
 **Known limits**: the same as Firefox §5.9, plus the Chrome checks above.
-"Read more" masks (an absolutely positioned fade + "Show more" bar over
-truncated text, e.g. in Google's knowledge panel) stay opaque, since
-clearing them would show the cut-off text underneath. Ads whose creative fills the slot with its own background still look solid.
+Ads whose creative fills the slot with its own background still look solid.
 
 ### 5.10 New Tab page (`newtab/newtab.html`, `newtab.css`, `newtab.js`)
 
@@ -648,6 +655,8 @@ reload the test tabs (see 5.4 on old tabs).
 17. chrome://settings and chromewebstore.google.com are unchanged.
 16a. Google search for a company (e.g. "youtube"): the knowledge panel's
     facts rows are translucent and tinted by the wallpaper; text is readable.
+    The "Show more" area is frosted and tinted, not a black band, and the
+    cut-off description text under it isn't readable.
 17a. A dark site with display ads (e.g. speedtest.net): no white boxes
     around or behind ads; the ads themselves look normal.
 
@@ -693,7 +702,7 @@ reload the test tabs (see 5.4 on old tabs).
 
 - Build: zip the extension files from the repo root, leaving out `spec.md`,
   `.git*`, and any build output:
-  `zip -r recolor-for-chrome-2.2.0.zip . -x 'spec.md' '.git*' '*.zip' 'icons/source/*' 'issue*.png'`.
+  `zip -r recolor-for-chrome-2.2.1.zip . -x 'spec.md' '.git*' '*.zip' 'icons/source/*' 'issue*.png'`.
 - Publish through the Chrome Web Store Developer Dashboard (one-time $5
   developer registration).
 - Store listing assets:
