@@ -161,6 +161,7 @@ Recolor-for-Chrome/
 │   ├── icon-48.png
 │   ├── icon-128.png
 │   └── source/icon.svg    (master artwork, not packaged)
+├── store/                 (Web Store screenshots + promo tile, not packaged)
 ├── LICENSE
 └── spec.md                (not packaged)
 ```
@@ -712,10 +713,17 @@ reload the test tabs (see 5.4 on old tabs).
 
 - Build: zip the extension files from the repo root, leaving out `spec.md`,
   `.git*`, and any build output:
-  `zip -r recolor-for-chrome-2.2.2.zip . -x 'spec.md' '.git*' '*.zip' 'icons/source/*' 'issue*.png'`.
+  `zip -r recolor-for-chrome-2.2.2.zip . -x 'spec.md' '.git*' '*.zip' 'icons/source/*' 'issue*.png' 'store/*'`.
 - Publish through the Chrome Web Store Developer Dashboard (one-time $5
   developer registration).
-- Store listing assets:
+- Store listing assets (in `store/`, not packaged):
+  - `screenshot-1-youtube.png` … `screenshot-5-upload.png`: 1280×800,
+    24-bit PNG, taken in Chromium with the extension and the default
+    wallpaper (YouTube search, Google results, YouTube Music, New Tab page,
+    upload page). Ads and an auto-playing preview were removed from the
+    YouTube shot before capture.
+  - `promo-small-440x280.png`: small promo tile, from
+    `store/source/promo-small.svg` (wallpaper, icon, name, tagline).
   - 128×128 icon (`icons/icon-128.png`, 96×96 artwork with 16 px transparent
     padding, as Google recommends).
 - Icon: a white eyedropper (the color-picker tool) dropping a color, on a
