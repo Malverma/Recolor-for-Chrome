@@ -1,10 +1,11 @@
-const DEFAULT_URL = chrome.runtime.getURL("images/background.jpg");
+const DEFAULT_URL = chrome.runtime.getURL("images/jms-kFHz9Xh3PPU-unsplash.jpg");
 const TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_BYTES = 20 * 1024 * 1024;
 const MAX_SIDE = 3840;
 
 const preview = document.getElementById("preview");
 const label = document.getElementById("label");
+const credit = document.getElementById("credit");
 const dropzone = document.getElementById("dropzone");
 const input = document.getElementById("file");
 const status = document.getElementById("status");
@@ -19,6 +20,7 @@ function showCurrent({ customBackground, customBackgroundUpdated }) {
   label.textContent = customBackground
     ? `Custom (uploaded ${new Date(customBackgroundUpdated).toLocaleString()})`
     : "Default";
+  credit.hidden = Boolean(customBackground);
 }
 
 // Scale down to MAX_SIDE, re-encode as WebP (also strips EXIF/location data).

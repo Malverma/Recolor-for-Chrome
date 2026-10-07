@@ -6,7 +6,7 @@ chrome.action.onClicked.addListener(() => {
 // web-accessible URL: Chrome extension IDs are fixed, so a web-accessible
 // file would let any page detect the extension.
 chrome.runtime.onInstalled.addListener(async () => {
-  const res = await fetch(chrome.runtime.getURL("images/background.jpg"));
+  const res = await fetch(chrome.runtime.getURL("images/jms-kFHz9Xh3PPU-unsplash.jpg"));
   const bytes = new Uint8Array(await res.arrayBuffer());
   let binary = "";
   for (let i = 0; i < bytes.length; i += 0x8000) {

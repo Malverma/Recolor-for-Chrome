@@ -1,4 +1,4 @@
-const DEFAULT_URL = chrome.runtime.getURL("images/background.jpg");
+const DEFAULT_URL = chrome.runtime.getURL("images/jms-kFHz9Xh3PPU-unsplash.jpg");
 
 const time = document.getElementById("time");
 const date = document.getElementById("date");

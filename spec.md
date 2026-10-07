@@ -29,7 +29,7 @@ instead, because generic mode can't handle their custom theme systems:
 | YouTube        | `https://www.youtube.com/*` (except `/embed/*`)        |
 | YouTube Music  | `https://music.youtube.com/*`                          |
 
-The wallpaper defaults to the bundled `images/background.jpg`. The user can
+The wallpaper defaults to the bundled `images/jms-kFHz9Xh3PPU-unsplash.jpg`. The user can
 open a drag-and-drop upload page from the toolbar and drop in their own image.
 It **replaces** the current wallpaper on every site at once.
 
@@ -88,8 +88,13 @@ The extension must **not**:
 
 ### 4.1 Default image
 
-- `images/background.jpg` (1920×1280, copyright-free), bundled with the
-  extension.
+- `images/jms-kFHz9Xh3PPU-unsplash.jpg` (2560×1707, ~1.1 MB), bundled with the
+  extension. Photo by [jms](https://unsplash.com/@jmsdono) on
+  [Unsplash](https://unsplash.com/photos/snowy-tunnel-view-in-yosemite-kFHz9Xh3PPU)
+  (Unsplash License). Credited in `CREDITS.md` and on the upload page.
+- The original is 5580×3720 (6 MB). It is scaled down because the seeded
+  data URL is held by every tab; re-export with
+  `magick <original> -resize 2560x2560\> -strip -interlace JPEG -quality 82 images/jms-kFHz9Xh3PPU-unsplash.jpg`.
 - Used whenever no custom image has been uploaded.
 - A higher-resolution file can be dropped in at the same path with no code
   changes.
@@ -97,7 +102,7 @@ The extension must **not**:
   by URL. In Firefox, `background.jpg` is a web-accessible resource. That's
   safe there because each install gets a random `moz-extension://` UUID. In
   Chrome the extension ID is the same for every user, so any page could
-  request `chrome-extension://<id>/images/background.jpg` to detect the
+  request `chrome-extension://<id>/images/jms-kFHz9Xh3PPU-unsplash.jpg` to detect the
   extension. Instead:
   - On `runtime.onInstalled` (install, update, and Chrome update), the
     service worker reads the bundled file and stores it as a data URL under
@@ -105,7 +110,7 @@ The extension must **not**:
   - `content.js` uses `customBackground || defaultBackground` (section 5.4).
   - The manifest has no `web_accessible_resources` entry.
   - The upload page is an extension page, so it can still show the default
-    with `chrome.runtime.getURL("images/background.jpg")`.
+    with `chrome.runtime.getURL("images/jms-kFHz9Xh3PPU-unsplash.jpg")`.
 
 ### 4.2 Custom image
 
@@ -114,7 +119,7 @@ The extension must **not**:
 - One image is shared by all sites.
 - Only one custom image exists at a time. Saving a new one overwrites the key,
   so the previous upload is discarded.
-- The bundled `background.jpg` file is never modified (extension files are
+- The bundled default image file is never modified (extension files are
   read-only). "Replace" means the custom image takes precedence over it.
 - Accepted input types: PNG, JPEG, WebP. Max input file size: 20 MB.
 - Before saving, the upload page normalizes the image:
@@ -154,7 +159,7 @@ Recolor-for-Chrome/
 │   ├── newtab.css
 │   └── newtab.js
 ├── images/
-│   └── background.jpg
+│   └── jms-kFHz9Xh3PPU-unsplash.jpg  (default wallpaper)
 ├── icons/
 │   ├── icon-16.png
 │   ├── icon-32.png
@@ -163,6 +168,8 @@ Recolor-for-Chrome/
 │   └── source/icon.svg    (master artwork, not packaged)
 ├── store/                 (Web Store screenshots + promo tile, not packaged)
 ├── LICENSE
+├── CREDITS.md             (wallpaper photo credit)
+├── PRIVACY.md             (privacy policy, not packaged)
 └── spec.md                (not packaged)
 ```
 
@@ -290,7 +297,7 @@ chrome.action.onClicked.addListener(() => {
 // web-accessible URL: Chrome extension IDs are fixed, so a web-accessible
 // file would let any page detect the extension.
 chrome.runtime.onInstalled.addListener(async () => {
-  const res = await fetch(chrome.runtime.getURL("images/background.jpg"));
+  const res = await fetch(chrome.runtime.getURL("images/jms-kFHz9Xh3PPU-unsplash.jpg"));
   const bytes = new Uint8Array(await res.arrayBuffer());
   let binary = "";
   for (let i = 0; i < bytes.length; i += 0x8000) {
@@ -304,7 +311,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 - Listeners are registered at the top level, so they still work after Chrome
   shuts down an idle service worker and starts it again.
-- `onInstalled` also runs on updates, so replacing `background.jpg` in a new
+- `onInstalled` also runs on updates, so replacing the default image in a new
   version updates the stored copy.
 - Service workers have no DOM, so the image is base64-encoded in chunks with
   `btoa` instead of `FileReader`/canvas.
@@ -432,14 +439,15 @@ The page has none.
   `chrome.storage.local.get/set`). The window-level drop guard's comment says
   "Stop Chrome from opening a file dropped outside the drop zone."
 - The default preview still uses
-  `chrome.runtime.getURL("images/background.jpg")`. That works without
+  `chrome.runtime.getURL("images/jms-kFHz9Xh3PPU-unsplash.jpg")`. That works without
   `web_accessible_resources` because this is an extension page.
 
 #### Layout
 
 1. Heading: "Recolor for Chrome: background".
 2. **Current background** preview: a 16:9 box showing the image in use, with
-   a label "Default" or "Custom (uploaded <date>)".
+   a label "Default" or "Custom (uploaded <date>)". While the default is
+   shown, a credit line links to the photographer and Unsplash (new tab).
 3. **Drop zone**: a large dashed-border area reading "Drop an image here or
    click to choose a file". Clicking it or pressing Enter/Space while it is
    focused opens a hidden `<input type="file"
@@ -570,7 +578,7 @@ overrides it with `chrome_url_overrides.newtab`.
   centered. A small "Change background" button in the bottom-right corner
   opens the upload page.
 - **Wallpaper:** `customBackground` from storage, or
-  `chrome.runtime.getURL("images/background.jpg")` (allowed on extension
+  `chrome.runtime.getURL("images/jms-kFHz9Xh3PPU-unsplash.jpg")` (allowed on extension
   pages). Updates live through `storage.onChanged`.
 - **Search:** `chrome.search.query({ text, disposition: "CURRENT_TAB" })`, so
   it uses whatever search engine the user has set as default. The search
@@ -702,7 +710,7 @@ reload the test tabs (see 5.4 on old tabs).
     appears (it may take a moment while seeding finishes).
 28. Bump the version and reload the extension. The custom image is still
     there, and newly loaded tabs show it.
-29. From a normal web page's console, `fetch("chrome-extension://<id>/images/background.jpg")`
+29. From a normal web page's console, `fetch("chrome-extension://<id>/images/jms-kFHz9Xh3PPU-unsplash.jpg")`
     fails (R16).
 30. DevTools Network tab: no requests from the extension.
 31. Disable the extension and reload each site. The original look comes back.
@@ -713,17 +721,19 @@ reload the test tabs (see 5.4 on old tabs).
 
 - Build: zip the extension files from the repo root, leaving out `spec.md`,
   `.git*`, and any build output:
-  `zip -r recolor-for-chrome-2.2.2.zip . -x 'spec.md' '.git*' '*.zip' 'icons/source/*' 'issue*.png' 'store/*'`.
+  `zip -r recolor-for-chrome-2.2.2.zip . -x 'spec.md' 'PRIVACY.md' '.git*' '*.zip' 'icons/source/*' 'issue*.png' 'store/*'`.
 - Publish through the Chrome Web Store Developer Dashboard (one-time $5
   developer registration).
 - Store listing assets (in `store/`, not packaged):
-  - `screenshot-1-youtube.png` … `screenshot-5-upload.png`: 1280×800,
-    24-bit PNG, taken in Chromium with the extension and the default
-    wallpaper (YouTube search, Google results, YouTube Music, New Tab page,
-    upload page). Ads and an auto-playing preview were removed from the
-    YouTube shot before capture.
+  - `screenshot-1-wikipedia.png` … `screenshot-5-apple.png`: 1280×800,
+    24-bit PNG, taken in Chrome with the extension and the default
+    wallpaper (Wikipedia, YouTube Subscriptions, Facebook login, BBC
+    Business, Apple Store). The ~2:1 captures are scaled to 1200 px wide
+    and centered, with a shadow, on a blurred, darkened copy of the
+    wallpaper, so nothing is cropped.
   - `promo-small-440x280.png`: small promo tile, from
-    `store/source/promo-small.svg` (wallpaper, icon, name, tagline).
+    `store/source/promo-small.svg` (wallpaper, icon, name, tagline). Re-export:
+    `rsvg-convert -w 440 -h 280 store/source/promo-small.svg | magick - -alpha off store/promo-small-440x280.png`.
   - 128×128 icon (`icons/icon-128.png`, 96×96 artwork with 16 px transparent
     padding, as Google recommends).
 - Icon: a white eyedropper (the color-picker tool) dropping a color, on a
@@ -738,6 +748,8 @@ reload the test tabs (see 5.4 on old tabs).
     light site forced dark, the upload page).
   - Small promo tile, 440×280.
 - Privacy practices tab:
+  - **Privacy policy URL:** `PRIVACY.md` on GitHub
+    (<https://github.com/Malverma/Recolor-for-Chrome/blob/main/PRIVACY.md>).
   - **Single purpose:** "Displays a user-chosen wallpaper behind web pages
     and darkens light pages to match."
   - **Permission justifications:** `storage`: saves the chosen wallpaper
